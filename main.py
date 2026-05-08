@@ -20,14 +20,15 @@ DATA_TSV_FILE = "llm-list.tsv"
 def _download_image(url, save_dir, save_name=None, overwrite=False):
     if not save_name:
         save_name = url.split("/")[-1]
-    if not url.startswith("http"):
-        url = urljoin(BLOG_URL, url)
-    logging.info(f"Request = {url} -> {save_name}")
 
     save_path = Path(save_dir, save_name)
     if not overwrite and save_path.exists():
-        logging.info("Ignore existed image")
+        logging.info(f"Ignore existed image {save_name}")
         return
+
+    if not url.startswith("http"):
+        url = urljoin(BLOG_URL, url)
+    logging.info(f"Request = {url} -> {save_name}")
 
     r = curl_cffi.get(url, stream=True)
     if r.status_code != 200:
@@ -102,18 +103,20 @@ def parse_rss():
     # link = entry["link"]
     # summary = entry['summary']
     published = entry["published"]
+    pub_date = datetime.strptime(published, "%a, %d %b %Y %H:%M:%S %z")
+    pub_version = pub_date.strftime("v%Y.%m.%d")
     with open(VERSION_FILE) as f:
         version = f.read().strip()
 
-    if version == published:
+    if version == pub_version:
         logging.info("No new version")
         return
-    logging.info(f"New version to update {version} => {published}")
+    logging.info(f"New version to update {version} => {pub_version}")
 
-    version2 = datetime.strptime(published, "%a, %d %b %Y %H:%M:%S %z").strftime("%Y%m%d")
-    if parse_blog(version2):
+    pub_dt = pub_date.strftime("%Y%m%d")
+    if parse_blog(pub_dt):
         with open(VERSION_FILE, "w") as f:
-            f.write(published)
+            f.write(pub_version)
 
 
 if __name__ == "__main__":
