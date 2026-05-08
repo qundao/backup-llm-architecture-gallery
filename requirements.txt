@@ -1,0 +1,4 @@
+curl_cffi>=0.15.0
+feedparser>=6.0.0
+lxml>=6.0.0
+pandas>=3.0.0
