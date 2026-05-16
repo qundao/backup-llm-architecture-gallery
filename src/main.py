@@ -49,10 +49,11 @@ def _parse_model(element):
     def to_str(e, pattern):
         return " ".join([v.strip() for v in e.xpath(f"{pattern}//text()")]).strip()
 
-    title = to_str(element, "./div/div[2]/h4")
-    summary = to_str(element, "./div/div[3]/p")
-    links = {a.text_content().strip(): a.get("href") for a in element.xpath("./div/div[2]/div/a")}
-    details = {to_str(e, "./dt"): to_str(e, "./dd") for e in element.xpath("./div/div[3]/dl/div")}
+    title = to_str(element, ".//h4")
+    summary = to_str(element, ".//p[@class='llm-architecture-overview__fact-summary']")
+    links = {a.text_content().strip(): a.get("href") for a in element.xpath(".//div[@class='llm-architecture-overview__title-meta']//a")}
+    details = {to_str(e, "./dt"): to_str(e, "./dd") for e in element.xpath(".//dl[@class='llm-architecture-overview__fact-grid']/div")}
+
     result = {"title": title, "summary": summary} | details | links
     return result
 
@@ -71,7 +72,8 @@ def parse_blog(version, overwrite=False):
     model_data = [_parse_model(element) for element in model_list]
     logging.info(f"Models = {len(model_list)}")
 
-    df = pd.DataFrame(model_data).sort_values(["Date", "title"])
+    df = pd.DataFrame(model_data)
+    df = df.sort_values(["Date", "title"])
     df.to_csv(DATA_TSV_FILE, index=False, sep="\t")
     logging.info(f"Save {df.shape} to {DATA_TSV_FILE}")
 
